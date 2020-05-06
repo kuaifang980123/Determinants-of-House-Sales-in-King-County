@@ -1,0 +1,424 @@
+---
+title: "430 project"
+output: word_document
+---
+
+```{r}
+library(car)
+library(ggplot2)
+housing_price <- read.csv("kc_house_data.csv")
+attach(housing_price)
+```
+
+```{r}
+# test whether there are missing values in the dataset
+library(DMwR) 
+actuals <- price
+predicted <- rep(mean(price, na.rm=T), length(actuals))
+regr.eval(actuals, predicted)
+knnOutput <- knnImputation(housing_price[, !names(housing_price) %in% "medv"])
+anyNA(knnOutput)
+housing_price <- na.omit(housing_price)
+# after predicting the missing observations using kNN, we find that there are no 
+#missing values.
+```
+
+
+Data description
+```{r}
+# price
+hist(price/10000,breaks = 'FD',col='skyblue3',freq = FALSE,ylab = 'Density',main = 'Density of price')
+lines(density(price),lwd=1,col='red')
+rug(price)
+qqPlot(price,main = 'Residual distribution of price')
+summary(price)
+# accourding to histgram, we have a large price range in which contains most housing
+#prices. However, we still have many housing prices which are in extreme values. #Therefore, in norm quantile graph, we can see two ends diverge from the predicted #line.
+```
+
+```{r}
+# bedrooms
+hist(bedrooms,breaks = 'FD',col='skyblue3',freq = FALSE,ylab = 'Density',main = 'Density of bedrooms')
+lines(density(bedrooms),lwd=1,col='red')
+rug(bedrooms)
+g_bedrooms=ggplot(housing_price, aes(x=price, fill=as.factor(bedrooms)))+
+    geom_histogram(aes(y=..density..),alpha=0.5, bins=15)+
+    geom_density(alpha=0.5)+ggtitle('Price distribution conditional on bedroom numbers')
+g_bedrooms
+qqPlot(~bedrooms,data=housing_price,id=list(n=3), main='Residual distribution of bedrooms')
+Boxplot(bedrooms,main='Boxplot of bedrooms')
+scatterplot(price~bedrooms,main='Scatterplot of bedrooms')
+summary(bedrooms)
+# most houses in our dataset have three bedrooms, but the maximum valus is 33, which
+#is abnormal. We will use outliertest to see if these values should be deleted.
+```
+
+```{r}
+# bathrooms
+hist(bathrooms,breaks = 'FD',col='skyblue3',freq = FALSE,ylab = 'Density',main='Density of bathrooms')
+lines(density(bathrooms),lwd=1,col='red')
+rug(bathrooms)
+g_bathrooms=ggplot(housing_price, aes(x=price, fill=as.factor(bathrooms)))+
+    geom_histogram(aes(y=..density..),alpha=0.5, bins=15)+
+    geom_density(alpha=0.5)+ggtitle('Price distribution conditional on bathroom numbers')
+g_bathrooms
+qqPlot(~bathrooms,data=housing_price,id=list(n=3),main='Residual distribution of bathrooms')
+Boxplot(bathrooms,main='Scatterplot of bathrooms')
+summary(bathrooms)
+# many extreme values in this variable. may lead to wide distribution. 
+```
+
+```{r}
+# sqft_living
+hist(sqft_living,breaks = 'FD',col='skyblue3',freq = FALSE,ylab = 'Density')
+lines(density(sqft_living),lwd=1,col='red')
+rug(sqft_living)
+qqPlot(~sqft_living,data=housing_price,id=list(n=3),main='Residual distribution of living space')
+Boxplot(sqft_living,main='Boxplot of living space')
+summary(sqft_living)
+# although we have many outliers, we can still find out that these values could be 
+#explained: Housing prices and number of rooms will increase when houses have larger
+#living spaces.
+```
+
+```{r}
+# sqft_lot
+hist(sqft_lot,breaks = 'FD',col='skyblue3',freq = FALSE,ylab = 'Density',main = 'Density of land space')
+lines(density(sqft_lot),lwd=1,col='red')
+rug(sqft_lot)
+qqPlot(~sqft_lot,data=housing_price,id=list(n=3),main='Residual distribution of land space')
+Boxplot(sqft_lot,main='Boxplot of land space')
+summary(sqft_lot)
+# distribution skewed to the right. many outliers here.
+```
+
+```{r}
+# floors
+hist(floors,breaks = 'FD',col='skyblue3',freq = FALSE,ylab = 'Density',main = 'Density of floors')
+lines(density(floors),lwd=1,col='red')
+rug(floors)
+g_floors=ggplot(housing_price, aes(x=price, fill=as.factor(floors)))+
+    geom_histogram(aes(y=..density..),alpha=0.5, bins=15)+
+    geom_density(alpha=0.5)+ggtitle('Price distribution conditional on floors')
+g_floors
+qqPlot(~floors,data=housing_price,id=list(n=3),main = 'Residual distribution of floors')
+Boxplot(floors,main = 'Boxplot of floors')
+# housing price of houses with different floors are not so different. So this 
+#variable might have limited impact on housing price.
+```
+
+```{r}
+# waterfront
+g_water=ggplot(housing_price, aes(x=price, fill=as.factor(waterfront)))+
+    geom_histogram(aes(y=..density..),alpha=0.5, bins=15)+
+    geom_density(alpha=0.5)+ggtitle('Price distribution conditional on waterfront')
+g_water
+#waterfront houses are more likely to have higher prices
+```
+
+```{r}
+# view
+g_view=ggplot(housing_price, aes(x=price, fill=as.factor(view)))+
+    geom_histogram(aes(y=..density..),alpha=0.5, bins=15)+
+    geom_density(alpha=0.5)+ggtitle('Price distribution conditional on view')
+g_view
+# houses with better view have higher probability to get a higher price, vice versa. 
+```
+
+```{r}
+# condition
+g_condition=ggplot(housing_price, aes(x=price, fill=as.factor(condition)))+
+    geom_histogram(aes(y=..density..),alpha=0.5, bins=15)+
+    geom_density(alpha=0.5)+ggtitle('Price distribution conditional on condition')
+g_condition
+# houses with better condition will have higher probability to have high prices
+```
+
+```{r}
+# grade
+g_grade=ggplot(housing_price, aes(x=price, fill=as.factor(grade)))+
+    geom_histogram(aes(y=..density..),alpha=0.5, bins=15)+
+    geom_density(alpha=0.5)+ggtitle('Price distribution conditional on grade')
+g_grade
+# houses with better design have higher probability to have high prices
+```
+
+```{r}
+# sqft_above
+hist(sqft_above,breaks = 'FD',col='skyblue3',freq = FALSE,ylab = 'Density',main = 'Density of interior housing space')
+lines(density(sqft_above,lwd=1,col='red'))
+rug(sqft_above)
+qqPlot(~sqft_above,data=housing_price,id=list(n=3),main='Resiudal distribution of interior housing space')
+Boxplot(sqft_above,main='Boxplot of interior housing space')
+summary(sqft_above)
+# many outliers here
+```
+
+```{r}
+# yr_built
+hist(yr_built,breaks = 'FD',col='skyblue3',freq = FALSE,ylab = 'Density',main = 'Density of built year')
+lines(density(yr_built,lwd=1,col='red'))
+rug(yr_built)
+qqPlot(~yr_built,data=housing_price,id=list(n=3),main='Residual distribution of built year')
+Boxplot(yr_built,main='Boxplot of built year')
+scatterplot(price~yr_built,main='Scatterplot of built year')
+summary(yr_built)
+# histagram of year of built is distributed relatively even
+```
+
+```{r}
+# yr_renovated
+hist(yr_renovated,breaks = 'FD',col='skyblue3',freq = FALSE,ylab = 'Density',main='Density of renovated year')
+lines(density(yr_renovated,lwd=1,col='red'))
+rug(yr_renovated)
+qqPlot(~yr_renovated,data=housing_price,id=list(n=3),main='Residual distribution of renovated year')
+Boxplot(yr_renovated,main='Boxplot of renovated year')
+scatterplot(price~yr_renovated,main='Scatterplot of renovated year')
+summary(yr_renovated)
+# most houses had been renewed near year 2000
+housing_price$yr_renovated=replace(yr_renovated,which(yr_renovated>0),1)
+# we catagory renewed house as 1, others as 0
+g_yr_renovated=ggplot(housing_price, aes(x=price, fill=as.factor(yr_renovated)))+
+    geom_histogram(aes(y=..density..),alpha=0.5, bins=15)+
+    geom_density(alpha=0.5)+ggtitle('Price distribution conditional on renovated year')
+g_yr_renovated
+# renewed houses have higher prices
+```
+
+```{r}
+# lat
+hist(lat,breaks = 'FD',col='skyblue3',freq = FALSE,ylab = 'Density',main = 'Density of lat')
+lines(density(lat,lwd=1,col='red'))
+rug(lat)
+qqPlot(~lat,data=housing_price,id=list(n=3),main='Residual distribution of lat')
+Boxplot(lat,main='Boxplot of lat')
+summary(lat)
+# since King county is a small district, the differences of latitude between each 
+#house are small.
+```
+
+```{r}
+# long
+summary(long)
+# longtitude has no practical meaning.
+```
+
+```{r}
+# sqft_living15
+hist(sqft_living15,breaks = 'FD',col='skyblue3',freq = FALSE,ylab = 'Density', main='Density of neighbor house living space')
+lines(density(sqft_living15,lwd=1,col='red'))
+rug(sqft_living15)
+qqPlot(~sqft_living15,data=housing_price,id=list(n=3),main='Residual distribution of neighbor house living space')
+Boxplot(sqft_living15,main='Boxplot of neighbor house living space')
+summary(sqft_living15)
+# we have many outliers in this variable. Distribution is skewed.
+```
+
+```{r}
+# sqft_lot15
+hist(sqft_lot15,breaks = 'FD',col='skyblue3',freq = FALSE,ylab = 'Density',main='Density of neighbor house land space')
+lines(density(sqft_lot15,lwd=1,col='red'))
+rug(sqft_lot15)
+qqPlot(~sqft_lot15,data=housing_price,id=list(n=3),main='Residual distribution of neighbor house land space')
+Boxplot(sqft_lot15,main='Boxplot of neighbor house land space')
+summary(sqft_living15)
+# distribution is extremely skewed to the right. a large amount of outliers stretch 
+# the distribution to be wider.
+```
+
+```{r, fig.width=7, fig.height=7, warning=F}
+scatterplotMatrix(~price+bedrooms+bathrooms+sqft_living+sqft_lot+floors+waterfront+
+                    view+condition+grade+sqft_above+yr_built+yr_renovated+lat+long+
+                    sqft_living15+sqft_lot15,housing_price,main='Scatterplot')
+```
+
+```{r}
+library(corrplot)
+corrplot(cor(housing_price),main='Correlation plot')
+# from the correlation plot, "sqft-living","grade" and "sqft-above" may have 
+#multicollinearity
+```
+
+```{r}
+# delete outliers, influences, and leverages
+mod.1 <- lm(price~.,data=housing_price)
+summary(mod.1)
+outlierTest(mod.1)
+influenceIndexPlot(mod.1)
+par(mfrow=c(2,2))
+plot(mod.1)
+mod.2 <- update(mod.1,subset=-whichNames(c("7253", "9255","3915","4412","1449","8639","1316","1165","12371","18483","15871"),housing_price))
+summary(mod.2)
+# we detect there are several outliers. Hence we delete these value.
+```
+
+```{r}
+# multicollinearity
+vif(mod.2)
+sqrt(vif(mod.2))>4
+# no multicollinearity by testing VIF
+```
+
+```{r}
+housing_price_1 <- housing_price[-c(7253,9255,3915,4412,1449,8639,1316,1165,12371,18483,15871),]
+
+summary(powerTransform(sqft_living ~ 1,family = 'yjPower', housing_price_1))
+sqft_living_new <- yjPower(sqft_living,0)
+# log transformation
+
+summary(powerTransform(sqft_lot ~ 1,family = 'yjPower', housing_price_1))
+sqft_lot_new <- yjPower(sqft_lot,0)
+# log transformation
+
+summary(powerTransform(sqft_above ~ 1,family = 'yjPower', housing_price_1))
+sqft_above_new <- yjPower(sqft_above,0)
+# log transformation
+
+
+summary(powerTransform(sqft_living15 ~ 1,family = 'yjPower', housing_price_1))
+sqft_living15_new <- yjPower(sqft_living15,0)
+# log transformation
+
+summary(powerTransform(sqft_lot15 ~ 1,family = 'yjPower', housing_price_1))
+sqft_lot15_new <- yjPower(sqft_lot15,0)
+# log transformation
+# according to the histograms, we apply tranformation test to see if transformation for these variables are needed.
+# since transformation is necessary, we applied transformation.
+```
+
+```{r}
+# variables selection
+# we use mallow-cp first to find out which variables are the best fit to the model
+library(leaps)
+ss=regsubsets(price~.,method=c("exhaustive"),nbest=3,data=housing_price_1)
+subsets(ss,statistic="cp",legend=F,main="Mallows CP",col="steelblue4",ylim=c(200,500))
+ss1 <- summary(ss)
+print(which.min(ss1$cp))
+coef(ss,22)
+
+mod.3 <- lm(price~bedrooms+bathrooms+sqft_living+waterfront+view+grade+yr_built+lat,data = housing_price_1)
+summary(mod.3)
+step(mod.3)
+library(lmtest)
+library(PoEdata)
+
+# model misspecifation
+# then we use resettest to test whether we need to add interaction terms.
+resettest(mod.3,power=2)
+# add interaction term: condition and built year
+mod.4 <- lm(price~bedrooms+bathrooms+sqft_living+waterfront+grade+view+yr_built+lat+grade*yr_built,data = housing_price_1)
+summary(mod.4)
+
+# add interaction term: warterfront and living space
+mod.5 <- lm(price~bedrooms+bathrooms+sqft_living+waterfront+grade+view+yr_built+lat+grade*yr_built+waterfront*sqft_living,data = housing_price_1)
+summary(mod.5)
+# in this model, we find that houses with waterfront view has lower price, which 
+#doesn't make sense in real life economics.Thus, we shouldn't add this interaction 
+#term.
+
+# add interaction term: waterfront and view
+mod.6 <- lm(price~bedrooms+bathrooms+sqft_living+waterfront+grade+view+yr_built+lat+grade*yr_built+waterfront*view,data = housing_price_1)
+summary(mod.6)
+# one of the main effects loses significnace.Thus, we should not add this 
+#interaction term.
+
+# add interaction term: waterfront and grade
+mod.7 <- lm(price~bedrooms+bathrooms+sqft_living+waterfront+grade+view+yr_built+lat+grade*yr_built+waterfront*grade,data = housing_price_1)
+summary(mod.7)
+# this model does not make sense in real life economics
+
+# add interaction term: view and grade
+mod.8 <- lm(price~bedrooms+bathrooms+sqft_living+waterfront+grade+view+yr_built+lat+grade*yr_built+view*grade,data = housing_price_1)
+summary(mod.8)
+# in this model, we find that a house with high level of view has even lower price, 
+#which doesn't make sense in real life economics.Thus, we should not add this 
+#interaction term.
+
+## add interaction term: bedroom and living space
+mod.9 <- lm(price~bedrooms+bathrooms+sqft_living+waterfront+grade+view+yr_built+lat+grade*yr_built+bedrooms*sqft_living,data = housing_price_1)
+summary(mod.9)
+# the final coefficent of bigger houses with more bedrooms is still negative, 
+#which doesn't make sense in economics.Thus, we shouldn't add this interaction 
+#term.
+
+# add interaction term: bathroom and living space
+mod.10 <- lm(price~bedrooms+bathrooms+sqft_living+waterfront+grade+view+yr_built+lat+condition*yr_built+bathrooms*sqft_living,data = housing_price_1)
+summary(mod.10)
+#the effect of the number of bathrooms become nagetive, which is not 
+#reasonable in real world.Thus, we shouldn't add this interaction term. 
+
+# transformation
+mod.11 <- lm(price~bedrooms+bathrooms+log(sqft_living)+waterfront+grade+view+yr_built+lat+grade*yr_built,data = housing_price_1)
+summary(mod.11)
+# however, adding transformation makes our model fitness worse than before since AIC goes up.
+
+# AIC/BIC
+AIC.mod <- AIC(mod.2,mod.3,mod.4,mod.11)
+BIC.mod <- BIC(mod.2,mod.3,mod.4,mod.11)
+print(AIC.mod)
+print(BIC.mod)
+# by using AIC and BIC, we figure out that model 4 is the best since AIC value of model 4 is the smallest.
+```
+
+```{r}
+library(DAAG)
+cvResults <- suppressWarnings(CVlm(data=housing_price_1, form.lm=formula(price~bedrooms+bathrooms+sqft_living+waterfront+view+grade+yr_built+lat+grade*yr_built), m=5,dots=FALSE, legend.pos="topleft", printit=TRUE))
+attr(cvResults, 'ms')
+# there is no much differences between each MSE value.
+```
+
+```{r}
+# heteroskedasticity
+library(lmtest)
+bptest(mod.4)
+cov1 <-  hccm(mod.4)
+testres <- coeftest(mod.4, vcov. = cov1)
+print(testres)
+# although we might have heteroskedasticity, all of the coefficients are still  
+#statistically significant. Therefore, heteroskedasticity may not affect that much. 
+#We can mitigate the problems in hypothesis tests using robust standard error.
+```
+
+```{r}
+plot(mod.4$residuals,pch=20,main='Residuals of model 4')
+abline(h=0,col='red',lwd=2)
+residualPlots(mod.4)
+
+plot(housing_price_1$price,predict(mod.4),main='Real value v.s. Fitted value')
+# we can see when prices are near average, the predicted values fit well. However, 
+#when prices are high, the predicted values diverge from the trend line. The 
+#possible reason to explain the graph is that we may have many extreme values.
+```
+
+```{r}
+# bootstrapping
+library(car)
+set.seed(343747)
+boot.mod = lm(price~bedrooms+bathrooms+sqft_living+waterfront+grade+view+yr_built+lat+grade*yr_built,data = housing_price_1)
+betahat.boot = Boot(boot.mod, R=999)
+usualEsts = summary(boot.mod)$coef[, 1:2]
+```
+
+
+```{r}
+summary(betahat.boot)
+coef(mod.4)
+confint(betahat.boot)
+# the original estimated coefficients  are all in the confidence interval.
+hist(betahat.boot)
+#the density graph of each variable looks good.
+```
+
+
+
+```{r}
+sigmahat.boot <- Boot(boot.mod, R=999, f=sigmaHat, labels="sigmaHat")
+summary(sigmahat.boot)
+confint(sigmahat.boot)
+# the residual standard error is in the confidence interval of bootstrapping.
+# in conclusion, our model is very robust.
+```
+
+
+
+
